@@ -1,0 +1,4 @@
+venv/
+.venv/
+.DSstore/
+__pycache__

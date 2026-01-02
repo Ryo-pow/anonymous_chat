@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>匿名チャット</title>
+</head>
+<body>
+    <h1>匿名チャット</h1>
+
+    <input type="text" id="messageInput" placeholder="メッセージを入力...">
+
+    <button onclick="sendWhisper()">送信</button>
+
+    <div id="chatLog"></div>
+
+    <script>
+        // ここにJavaScript（動き）を書いていきます
+        function sendWhisper() {
+            // 入力欄から文字を読み取る
+            const input = document.getElementById("messageInput");
+            const text = input.value;
+
+            // 動きの確認：アラート（警告音と窓）を出してみる
+            alert("あなたが打った文字は: " + text);
+
+            // 入力欄を空にする
+            input.value = "";
+        }
+    </script>
+</body>
+</html>

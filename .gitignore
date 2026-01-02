@@ -1,4 +1,8 @@
 venv/
 .venv/
-.DSstore/
 __pycache__
+*.py[cod]
+*$py.class
+
+.vscode/
+.DS_Store

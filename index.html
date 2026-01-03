@@ -13,6 +13,8 @@
 
     <div id="chatLog"></div>
 
+    <ul id="messageList"></ul>
+
     <script>
         // ここにJavaScript（動き）を書いていきます
         async function sendWhisper() {
@@ -27,6 +29,13 @@
             });
 
             const result = await response.json();
+            const list = document.getElementById("messageList");
+
+            const li = document.createElement("li");
+
+            li.textContent = text;
+
+            list.appendChild(li);
             console.log("サーバーからの返事:", result);
             // 入力欄を空にする
             input.value = "";

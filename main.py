@@ -13,6 +13,15 @@ import redis.asyncio as redis
 
 app = FastAPI()
 
+# --- ここから追加 ---
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],    # すべてのサイトからのアクセスを許可
+    allow_methods=["*"],    # GETやPOSTなど、すべての命令を許可
+    allow_headers=["*"],    # すべての設定項目を許可
+)
+# --- ここまで追加 ---
+
 #Redis接続(decode_responses=Trueにすると文字列として取得できます)
 redis_client = redis.from_url("redis://localhost:6379", decode_responses=True)
 

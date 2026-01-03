@@ -17,29 +17,45 @@
 
     <script>
         // ここにJavaScript（動き）を書いていきます
-        async function sendWhisper() {
-            // 入力欄から文字を読み取る
-            const input = document.getElementById("messageInput");
-            const text = input.value;
-
-            if (!text) return;
-
-            const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text),{
-                method: "POST"
-            });
-
-            const result = await response.json();
+        const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+        socket.onmessage = function(event) {
             const list = document.getElementById("messageList");
-
             const li = document.createElement("li");
 
-            li.textContent = text;
-
+            li.textContent = "誰かの囁き：" + event.data;
+            li.style.color = "blue";
             list.appendChild(li);
-            console.log("サーバーからの返事:", result);
-            // 入力欄を空にする
-            input.value = "";
         }
+    async function sendWhisper() {
+        const input = document.getElementById("messageInput");
+        const text = input.value;
+        if (!text) return;
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text), {
+                method: "POST"
+        });
+
+            // サーバーからの返事（単なる文字列）を受け取る
+            const result = await response.json(); 
+            console.log("サーバーの反応:", result);
+
+            // --- 自分の画面に自分の投稿を表示する（DOM操作） ---
+            const list = document.getElementById("messageList");
+            const li = document.createElement("li");
+            
+            // 変数「text」（さっき入力欄から取った文字）を直接入れる
+            li.textContent = "自分: " + text; 
+            
+            list.appendChild(li);
+            // ------------------------------------------
+
+            input.value = ""; // 入力欄を空にする
+
+    } catch (error) {
+        console.error("通信エラー:", error);
+    }
+}
     </script>
 </body>
 </html>

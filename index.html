@@ -15,14 +15,19 @@
 
     <script>
         // ここにJavaScript（動き）を書いていきます
-        function sendWhisper() {
+        async function sendWhisper() {
             // 入力欄から文字を読み取る
             const input = document.getElementById("messageInput");
             const text = input.value;
 
-            // 動きの確認：アラート（警告音と窓）を出してみる
-            alert("あなたが打った文字は: " + text);
+            if (!text) return;
 
+            const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text),{
+                method: "POST"
+            });
+
+            const result = await response.json();
+            console.log("サーバーからの返事:", result);
             // 入力欄を空にする
             input.value = "";
         }

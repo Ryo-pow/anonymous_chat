@@ -3,6 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <title>匿名チャット</title>
+
+    <style>
+        body {
+            font-family: "Helvetica", sans-serif;
+            background-color: "f0f2f5";
+            padding: 20px;
+        }
+
+    #messageInput{
+        padding: 10px;
+        border: 2px solid #ddd;
+        border-radius: 20px;
+        width: 250px;
+        outline: none;
+    }
+
+    button {
+        background-color: #0056b3;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    #messageList{
+        list-style: none;
+        padding: 0;
+    }
+
+    #messageList li {
+        background-color: white;
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    </style>
 </head>
 <body>
     <h1>匿名チャット</h1>

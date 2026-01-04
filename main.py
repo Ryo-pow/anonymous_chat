@@ -1,7 +1,3 @@
-# 標準ライブラリ
-import asyncio
-import json
-import time
 import datetime
 
 # FastAPI本体とWebSocket関連

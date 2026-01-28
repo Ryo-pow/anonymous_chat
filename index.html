@@ -7,96 +7,173 @@
     <style>
         body {
             font-family: "Helvetica", sans-serif;
-            background-color: "f0f2f5";
-            padding: 20px;
+            background-color: #f0f2f5; 
+            margin: 0;
+            height: 100vh; 
+            display: flex; 
         }
 
-    #messageInput{
-        padding: 10px;
-        border: 2px solid #ddd;
-        border-radius: 20px;
-        width: 250px;
-        outline: none;
-    }
+        .sidebar {
+            width: 300px;
+            background-color: #fff;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        }
 
-    button {
-        background-color: #0056b3;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 20px;
-        cursor: pointer;
-    }
+        .chat-area {
+            flex: 1; 
+            background-color: #e5ddd5;
+            padding: 20px;
+            overflow-y: auto; 
+            display: flex;
+            flex-direction: column-reverse; 
+            flex-direction: column; 
+        }
 
-    button:hover {
-        background-color: #0056b3;
-    }
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin: 0 0 10px 0;
+        }
 
-    #messageList{
-        list-style: none;
-        padding: 0;
-    }
+        #messageInput{
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            width: 100%; 
+            box-sizing: border-box; 
+            outline: none;
+            font-size: 16px;
+        }
 
-    #messageList li {
-        background-color: white;
-        margin: 10px 0;
-        padding: 10px;
-        border-radius: 10px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
+        button {
+            background-color: #0056b3;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #004494;
+        }
+
+        #messageList{
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column; 
+            gap: 10px;
+        }
+
+        #messageList li {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        /* 相手（左側）のスタイル */
+        .message-other {
+            align-self: flex-start; /* 左寄せ */
+            background-color: white;
+            color: #333;
+            border-top-left-radius: 0 !important; /* 吹き出しっぽく */
+        }
+
+        /* 自分（右側）のスタイル */
+        .message-me {
+            align-self: flex-end; /* 右寄せ */
+            background-color: #dcf8c6; /* LINEっぽい緑 */
+            color: #333;
+            border-top-right-radius: 0 !important; /* 吹き出しっぽく */
+        }
+
     </style>
 </head>
 <body>
-    <h1>匿名チャット</h1>
 
-    <input type="text" id="messageInput" placeholder="メッセージを入力...">
+    <div class="sidebar">
+        <h1>匿名チャット</h1>
+        <p>メッセージを入力して送信してください。</p>
+        <input type="text" id="messageInput" placeholder="メッセージを入力...">
+        <button onclick="sendWhisper()">送信</button>
+        <div id="chatLog"></div> </div>
 
-    <button onclick="sendWhisper()">送信</button>
-
-    <div id="chatLog"></div>
-
-    <ul id="messageList"></ul>
+    <div class="chat-area">
+        <ul id="messageList">
+            </ul>
+    </div>
 
     <script>
-        // ここにJavaScript（動き）を書いていきます
         const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+        
+        // 相手からのメッセージ受信
         socket.onmessage = function(event) {
             const list = document.getElementById("messageList");
             const li = document.createElement("li");
 
-            li.textContent = "誰かの囁き：" + event.data;
-            li.style.color = "blue";
+            li.textContent = event.data; // "誰かの囁き"などの装飾はCSSで表現しても良いですが、ここではシンプルにテキスト
+            li.classList.add("message-other"); // ★左寄せクラスを追加
+            
             list.appendChild(li);
+            scrollToBottom();
         }
-    async function sendWhisper() {
-        const input = document.getElementById("messageInput");
-        const text = input.value;
-        if (!text) return;
 
-        try {
-            const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text), {
-                method: "POST"
+        async function sendWhisper() {
+            const input = document.getElementById("messageInput");
+            const text = input.value;
+            if (!text) return;
+
+            try {
+                // サーバーへ送信（非同期）
+                const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text), {
+                    method: "POST"
+                });
+
+                const result = await response.json(); 
+                console.log("サーバーの反応:", result);
+
+                // --- 自分の画面に自分の投稿を表示 ---
+                const list = document.getElementById("messageList");
+                const li = document.createElement("li");
+                
+                li.textContent = text; 
+                li.classList.add("message-me"); // ★右寄せクラスを追加
+                
+                list.appendChild(li);
+
+                input.value = ""; 
+                scrollToBottom();
+
+            } catch (error) {
+                console.error("通信エラー:", error);
+            }
+        }
+
+        // メッセージが追加されたら一番下までスクロールする関数
+        function scrollToBottom() {
+            const area = document.querySelector(".chat-area");
+            area.scrollTop = area.scrollHeight;
+        }
+
+        // Enterキーでも送信できるようにする便利機能
+        document.getElementById("messageInput").addEventListener("keypress", function(e){
+            if(e.key === "Enter"){
+                sendWhisper();
+            }
         });
-
-            // サーバーからの返事（単なる文字列）を受け取る
-            const result = await response.json(); 
-            console.log("サーバーの反応:", result);
-
-            // --- 自分の画面に自分の投稿を表示する（DOM操作） ---
-            const list = document.getElementById("messageList");
-            const li = document.createElement("li");
-            
-            // 変数「text」（さっき入力欄から取った文字）を直接入れる
-            li.textContent = "自分: " + text; 
-            
-            list.appendChild(li);
-            // ------------------------------------------
-
-            input.value = ""; // 入力欄を空にする
-
-    } catch (error) {
-        console.error("通信エラー:", error);
-    }
-}
     </script>
 </body>
 </html>

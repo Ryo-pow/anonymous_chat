@@ -3,130 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <title>匿名チャット</title>
-
     <style>
-        body {
-            font-family: "Helvetica", sans-serif;
-            background-color: #f0f2f5; 
-            margin: 0;
-            height: 100vh; 
-            display: flex; 
-        }
-
-        .sidebar {
-            width: 300px;
-            background-color: #fff;
-            padding: 20px;
-            border-right: 1px solid #ccc;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.05);
-        }
-
-        .chat-area {
-            flex: 1; 
-            background-color: #e5ddd5;
-            padding: 20px;
-            overflow-y: auto; 
-            display: flex;
-            flex-direction: column-reverse; 
-            flex-direction: column; 
-        }
-
-        h1 {
-            font-size: 24px;
-            color: #333;
-            margin: 0 0 10px 0;
-        }
-
-        #messageInput{
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            width: 100%; 
-            box-sizing: border-box; 
-            outline: none;
-            font-size: 16px;
-        }
-
-        button {
-            background-color: #0056b3;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: background-color 0.2s;
-        }
-
-        button:hover {
-            background-color: #004494;
-        }
-
-        #messageList{
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: flex;
-            flex-direction: column; 
-            gap: 10px;
-        }
-
-        #messageList li {
-            max-width: 70%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-
-        /* 相手（左側）のスタイル */
-        .message-other {
-            align-self: flex-start; /* 左寄せ */
-            background-color: white;
-            color: #333;
-            border-top-left-radius: 0 !important; /* 吹き出しっぽく */
-        }
-
-        /* 自分（右側）のスタイル */
-        .message-me {
-            align-self: flex-end; /* 右寄せ */
-            background-color: #dcf8c6; /* LINEっぽい緑 */
-            color: #333;
-            border-top-right-radius: 0 !important; /* 吹き出しっぽく */
-        }
-
+        body { font-family: "Helvetica", sans-serif; background-color: #f0f2f5; margin: 0; height: 100vh; display: flex; }
+        .sidebar { width: 300px; background-color: #fff; padding: 20px; border-right: 1px solid #ccc; display: flex; flex-direction: column; gap: 15px; }
+        .chat-area { flex: 1; background-color: #e5ddd5; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        h1 { font-size: 24px; color: #333; margin: 0 0 10px 0; }
+        #messageInput{ padding: 12px; border: 2px solid #ddd; border-radius: 8px; width: 100%; box-sizing: border-box; outline: none; font-size: 16px; }
+        button { background-color: #0056b3; color: white; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #004494; }
+        #messageList{ list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+        #messageList li { max-width: 70%; padding: 10px 15px; border-radius: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); line-height: 1.4; word-wrap: break-word; }
+        
+        /* 相手（左側） */
+        .message-other { align-self: flex-start; background-color: white; color: #333; border-top-left-radius: 0 !important; }
+        /* 自分（右側） */
+        .message-me { align-self: flex-end; background-color: #dcf8c6; color: #333; border-top-right-radius: 0 !important; }
+        
+        /* 新着ラベル */
+        .new-msg-label { font-size: 11px; color: #ff5722; font-weight: bold; margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
 
     <div class="sidebar">
         <h1>匿名チャット</h1>
-        <p>メッセージを入力して送信してください。</p>
+        <p>ここは誰にも名前が見えません。<br>安心して呟いてください。</p>
         <input type="text" id="messageInput" placeholder="メッセージを入力...">
         <button onclick="sendWhisper()">送信</button>
-        <div id="chatLog"></div> </div>
+    </div>
 
     <div class="chat-area">
-        <ul id="messageList">
-            </ul>
+        <ul id="messageList"></ul>
     </div>
 
     <script>
+        // ★1. 自分のブラウザ専用の「見えないID」をランダムに作る
+        // これで「自分が送ったメッセージが自分に跳ね返ってくる」のを防ぎます
+        const myId = Math.random().toString(36).substring(2, 15);
+        console.log("あなたの匿名ID:", myId);
+
         const socket = new WebSocket("ws://127.0.0.1:8000/ws");
         
-        // 相手からのメッセージ受信
+        // ★2. サーバーからメッセージが届いた時の処理
         socket.onmessage = function(event) {
+            // サーバーから送られてきたデータ(JSON)を読み解く
+            const data = JSON.parse(event.data);
+            
+            // 重要: 送信元IDが自分と同じなら、表示しない（すでに自分の画面には表示済みだから）
+            if (data.sender_id === myId) {
+                return;
+            }
+
             const list = document.getElementById("messageList");
             const li = document.createElement("li");
+            li.classList.add("message-other");
 
-            li.textContent = event.data; // "誰かの囁き"などの装飾はCSSで表現しても良いですが、ここではシンプルにテキスト
-            li.classList.add("message-other"); // ★左寄せクラスを追加
-            
+            // ラベル
+            const labelSpan = document.createElement("span");
+            labelSpan.textContent = "新着メッセージ"; // 名前は出さず、これだけ表示
+            labelSpan.classList.add("new-msg-label");
+
+            // 本文
+            const textSpan = document.createElement("span");
+            textSpan.textContent = data.text;
+
+            li.appendChild(labelSpan);
+            li.appendChild(textSpan);
             list.appendChild(li);
             scrollToBottom();
         }
@@ -137,21 +79,16 @@
             if (!text) return;
 
             try {
-                // サーバーへ送信（非同期）
-                const response = await fetch("http://127.0.0.1:8000/whisper?message=" + encodeURIComponent(text), {
-                    method: "POST"
-                });
+                // ★3. 送信時、メッセージと一緒に「自分のID」もサーバーへ送る
+                const url = `http://127.0.0.1:8000/whisper?message=${encodeURIComponent(text)}&sender_id=${myId}`;
+                
+                await fetch(url, { method: "POST" });
 
-                const result = await response.json(); 
-                console.log("サーバーの反応:", result);
-
-                // --- 自分の画面に自分の投稿を表示 ---
+                // 自分の画面に表示（右側）
                 const list = document.getElementById("messageList");
                 const li = document.createElement("li");
-                
                 li.textContent = text; 
-                li.classList.add("message-me"); // ★右寄せクラスを追加
-                
+                li.classList.add("message-me");
                 list.appendChild(li);
 
                 input.value = ""; 
@@ -162,13 +99,11 @@
             }
         }
 
-        // メッセージが追加されたら一番下までスクロールする関数
         function scrollToBottom() {
             const area = document.querySelector(".chat-area");
             area.scrollTop = area.scrollHeight;
         }
 
-        // Enterキーでも送信できるようにする便利機能
         document.getElementById("messageInput").addEventListener("keypress", function(e){
             if(e.key === "Enter"){
                 sendWhisper();
